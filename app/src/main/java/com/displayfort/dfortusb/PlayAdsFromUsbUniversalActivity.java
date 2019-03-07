@@ -8,12 +8,10 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.media.AudioManager;
 import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -22,19 +20,20 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.VideoView;
+import android.widget.RelativeLayout;
 
 import com.bumptech.glide.Glide;
 import com.displayfort.dfortusb.receiver.StartService;
 import com.displayfort.dfortusb.widgets.FullScreenVideoView;
+import com.displayfort.dfortusb.widgets.UniversalFullScreenVideoView;
 import com.netcompss.ffmpeg4android.Prefs;
+import com.universalvideoview.UniversalMediaController;
+import com.universalvideoview.UniversalVideoView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.net.URLConnection;
 
 
@@ -42,7 +41,7 @@ import java.net.URLConnection;
  * Created by pc on 09/01/2019 10:59.
  * MyApplication
  */
-public class PlayAdsFromUsbActivity extends BaseSupportActivity implements SurfaceHolder.Callback {
+public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity implements SurfaceHolder.Callback {
     private String TAG = "USBCatch";
 
     String macId;
@@ -56,12 +55,14 @@ public class PlayAdsFromUsbActivity extends BaseSupportActivity implements Surfa
     //    private SurfaceView mSurfaceView;
     private SurfaceHolder mSurfaceHolder;
     private MediaPlayer mMediaPlayer;
-    private FullScreenVideoView videoView;
+    private UniversalVideoView videoView;
+    private RelativeLayout mUvVideoRl;
+    private File filePath;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_offline_main);
+        setContentView(R.layout.activity_universal_offline_main);
         this.sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_NAME, Context.MODE_PRIVATE);
         Orientation = ExifInterface.ORIENTATION_UNDEFINED;
         init();
@@ -69,13 +70,17 @@ public class PlayAdsFromUsbActivity extends BaseSupportActivity implements Surfa
     }
 
     private void init() {
-//        mSurfaceView = (SurfaceView) findViewById(R.id.surface_view);
-//        mSurfaceHolder = mSurfaceView.getHolder();
-//        mSurfaceHolder.addCallback(this);
-//        mSurfaceView.setVisibility(View.INVISIBLE);
+        mUvVideoRl = (RelativeLayout) findViewById(R.id.uv_video_rl);
+        mUvVideoRl.setVisibility(View.GONE);
         mDefaultIV = (ImageView) findViewById(R.id.default_iv);
         displayImageView = (ImageView) findViewById(R.id.imageView2);
         videoView = findViewById(R.id.videoView);
+// (UniversalMediaController) findViewById(R.id.media_controller);
+        UniversalMediaController mMediaController = new UniversalMediaController(this);
+        videoView.setMediaController(mMediaController);
+//        videoView.setVideoURI(Uri.parse("/sdcard/videokit/out1.mp4"));
+//        videoView.start();
+        /**/
     }
 
     ///data/user/0/displayfort.nirmit.com.myapplication/files
@@ -148,6 +153,7 @@ public class PlayAdsFromUsbActivity extends BaseSupportActivity implements Surfa
     }
 
     private void filterName(File file) {
+        filePath = file;
         completFileList = file.listFiles();
         if (completFileList != null && completFileList.length > 0) {
             for (File FronFile : completFileList) {
@@ -176,14 +182,14 @@ public class PlayAdsFromUsbActivity extends BaseSupportActivity implements Surfa
             String type = URLConnection.guessContentTypeFromName(file.getName());
             if (type != null) {
                 if (type.toLowerCase().contains("gif")) {
-                    videoView.setVisibility(View.INVISIBLE);
+                    mUvVideoRl.setVisibility(View.INVISIBLE);
                     displayImageView.setVisibility(View.VISIBLE);
                     String photoPath = file.getAbsolutePath();
                     Glide.with(this).load(changeOrientation(photoPath)).into(displayImageView);
                     Log.d("ADVERTISEMENT", photoPath.toString() + "");
                     interval = 5000;
                 } else if (type.toLowerCase().contains("image")) {
-                    videoView.setVisibility(View.INVISIBLE);
+                    mUvVideoRl.setVisibility(View.INVISIBLE);
                     displayImageView.setVisibility(View.VISIBLE);
                     //displayImageView
                     String photoPath = file.getAbsolutePath();
@@ -195,7 +201,7 @@ public class PlayAdsFromUsbActivity extends BaseSupportActivity implements Surfa
                     interval = 5000;
                 } else if (type.toLowerCase().contains("video")) {
                     displayImageView.setVisibility(View.VISIBLE);
-                    videoView.setVisibility(View.INVISIBLE);
+                    mUvVideoRl.setVisibility(View.INVISIBLE);
                     File newfile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + Prefs.FOLDER + file.getName());// new File(getApplicationInfo().dataDir + File.separator + file.getName());
                     boolean isFileFound = newfile.exists();
                     if (!isFileFound) {
@@ -203,9 +209,9 @@ public class PlayAdsFromUsbActivity extends BaseSupportActivity implements Surfa
                         interval = -1; // 1 Second
                     } else {
                         Log.d("VIDEPATH", "isFileFound" + isFileFound);
-                        if (!PlayAdsFromUsbActivity.hashSet.contains(newfile.getAbsolutePath())) {
+                        if (!PlayAdsFromUsbUniversalActivity.hashSet.contains(newfile.getAbsolutePath())) {
                             Log.d("VIDEPATH", "PlayAdsFromUsbActivity.hashSet" + true);
-                            videoView.setVisibility(View.VISIBLE);
+                            mUvVideoRl.setVisibility(View.VISIBLE);
                             String photoPath = newfile.getAbsolutePath();
                             interval = getMiliseconds(newfile);
                             if (interval != 0) {
@@ -271,23 +277,27 @@ public class PlayAdsFromUsbActivity extends BaseSupportActivity implements Surfa
                 }
             }
         } catch (Exception e) {
-            Log.e("Handeledexception", "E: " + e.getMessage());
-            videoView.setVisibility(View.INVISIBLE);
-            displayImageView.setVisibility(View.VISIBLE);
-            Handler handler = new Handler();
-            if (currentAdvertisementNo < (completFileList.length - 1)) {
-                currentAdvertisementNo++;
-            } else {
-                currentAdvertisementNo = 0;
-            }
-            Runnable runnable = new Runnable() {
-                public void run() {
-                    /* hit api on stop*/
-                    showCurrentAd();
+            if (filePath != null && filePath.exists()) {
+                Log.e("Handeledexception", "E: " + e.getMessage());
+                mUvVideoRl.setVisibility(View.INVISIBLE);
+                displayImageView.setVisibility(View.VISIBLE);
+                Handler handler = new Handler();
+                if (currentAdvertisementNo < (completFileList.length - 1)) {
+                    currentAdvertisementNo++;
+                } else {
+                    currentAdvertisementNo = 0;
                 }
-            };
-            handler.post(runnable);
-
+                Runnable runnable = new Runnable() {
+                    public void run() {
+                        /* hit api on stop*/
+                        showCurrentAd();
+                    }
+                };
+                handler.post(runnable);
+            } else {
+                mUvVideoRl.setVisibility(View.INVISIBLE);
+                displayImageView.setVisibility(View.VISIBLE);
+            }
         }
     }
 

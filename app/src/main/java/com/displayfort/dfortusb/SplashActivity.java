@@ -27,14 +27,14 @@ public class SplashActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         context = this;
+        setContentView(R.layout.activity_main);
         SetSupportFiles();
         PermisionRequest();
-        setContentView(R.layout.activity_main);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 Intent intent;
-                intent = new Intent(context, PlayAdsFromUsbActivity.class);
+                intent = new Intent(context, PlayAdsFromUsbUniversalActivity.class);
                 startActivity(intent);
                 finish();
 

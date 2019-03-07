@@ -23,13 +23,14 @@ import java.net.URLConnection;
 /**
  * Created by Husain on 14-03-2016.
  */
-public class StartService extends Service {
+public class StartServiceCopy extends Service {
     private String workFolder = null;
     private String demoVideoFolder = null;
     private String demoVideoPath = null;
     private String vkLogPath = null;
     private Context context;
     private File[] completFileList;
+    private int i = -1;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -61,16 +62,39 @@ public class StartService extends Service {
             String FilePath = intent.getStringExtra("FILEPATH");
             File mainFile = new File(FilePath);
             completFileList = mainFile.listFiles();
-            if (completFileList != null && completFileList.length > 0) {
-                new TranscdingBackground().execute();
-            }
+            i = -1;
+            StartProcess();
         }
         return super.onStartCommand(intent, flags, startId);
     }
 
+    private void StartProcess() {
+        if (completFileList != null && completFileList.length > i) {
+            Log.i(Prefs.TAG, "StartProcess check RC: ");
+            File file = completFileList[++i];
+            File transposeFile = new File(demoVideoFolder + file.getName());
+            try {
+                Log.d(Prefs.TAG, "FILE NAME:" + file.getName());
+                String type = URLConnection.guessContentTypeFromName(file.getName());
+                if (type != null && type.toLowerCase().contains("video") && !transposeFile.exists()) {
+                    new TranscdingBackground(file).execute();
+                } else {
+                    StartProcess();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            Log.i(Prefs.TAG, "StartProcess END ");
+        }
+    }
+
 
     public class TranscdingBackground extends AsyncTask<String, Integer, Integer> {
-        File files;
+        File file;
+
+        public TranscdingBackground(File _file) {
+            file = _file;
+        }
 
 
         @Override
@@ -80,53 +104,41 @@ public class StartService extends Service {
         }
 
         protected Integer doInBackground(String... paths) {
-            for (int i = 0; i < completFileList.length; i++) {
-                files = completFileList[i];
-                File transposeFile = new File(demoVideoFolder + files.getName());
+                      PowerManager powerManager = (PowerManager) getSystemService(Activity.POWER_SERVICE);
+            PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "USB:VK_LOCK");
+            Log.d(Prefs.TAG, "Acquire wake lock");
+            wakeLock.acquire();
+            //getApplicationInfo().dataDir
+            File transposeFile = new File(demoVideoFolder + file.getName());
+            PlayAdsFromUsbActivity.hashSet.add(transposeFile.getAbsolutePath());
+            Log.i(Prefs.TAG, file.getAbsolutePath() + "\n" + transposeFile.getAbsolutePath());
+            String commandStr8 = "ffmpeg -y -i " + file.getAbsolutePath().replace(" ", "%20") + " -strict experimental -vf transpose=2 -aspect 16:9 " + transposeFile.getAbsolutePath().replace(" ", "%20"); //-s frame rate
+            LoadJNI vk = new LoadJNI();
+            try {
+                /*  /data/user/0/com.displayfort.dfortusb/blue_ball_v.mp4*/
+                Log.i(Prefs.TAG, "=======running eight command=========");
+                vk.run(GeneralUtils.utilConvertToComplex(commandStr8), workFolder, getApplicationContext());
+                GeneralUtils.copyFileToFolder(vkLogPath, demoVideoFolder);
+                Log.i(Prefs.TAG, "=======running FINISH=========");
                 try {
-                    Log.d(Prefs.TAG, files.getName());
-                    String type = URLConnection.guessContentTypeFromName(files.getName());
-                    if (type != null && type.toLowerCase().contains("video") && !transposeFile.exists()) {
-                        PowerManager powerManager = (PowerManager) getSystemService(Activity.POWER_SERVICE);
-                        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "USB:VK_LOCK");
-                        Log.d(Prefs.TAG, "Acquire wake lock");
-                        wakeLock.acquire();
-                        PlayAdsFromUsbActivity.hashSet.add(transposeFile.getAbsolutePath());
-                        Log.i(Prefs.TAG, files.getAbsolutePath() + "\n" + transposeFile.getAbsolutePath());
-                        String commandStr8 = "ffmpeg -y -i " + files.getAbsolutePath().replace(" ", "%20") + " -strict experimental -vf transpose=2 -aspect 16:9 " + transposeFile.getAbsolutePath().replace(" ", "%20"); //-s frame rate
-                        LoadJNI vk = new LoadJNI();
-                        try {
-                            /*  /data/user/0/com.displayfort.dfortusb/blue_ball_v.mp4*/
-                            Log.i(Prefs.TAG, "=======running eight command=========");
-                            vk.run(GeneralUtils.utilConvertToComplex(commandStr8), workFolder, getApplicationContext());
-                            GeneralUtils.copyFileToFolder(vkLogPath, demoVideoFolder);
-                            Log.i(Prefs.TAG, "=======running FINISH=========");
-//                            try {
-//                                runThreadForProgress();
-//                            } catch (Exception e) {
-//                                e.printStackTrace();
-//                            }
-                        } catch (Throwable e) {
-                            Log.e(Prefs.TAG, "vk run exeption.", e);
-                            if (transposeFile.exists()) {
-                                transposeFile.delete();
-                            }
-                        } finally {
-                            if (wakeLock.isHeld())
-                                wakeLock.release();
-                            else {
-                                Log.i(Prefs.TAG, "Wake lock is already released, doing nothing");
-                            }
-                        }
-                        PlayAdsFromUsbActivity.hashSet.remove(transposeFile.getAbsolutePath());
-                        Log.i(Prefs.TAG, "doInBackground finished");
-                    } else {
-                        Log.i(Prefs.TAG, "File Exist " + transposeFile.getName());
-                    }
+                runThreadForProgress();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            } catch (Throwable e) {
+                Log.e(Prefs.TAG, "vk run exeption.", e);
+                if (transposeFile.exists()) {
+                    transposeFile.delete();
+                }
+            } finally {
+                if (wakeLock.isHeld())
+                    wakeLock.release();
+                else {
+                    Log.i(Prefs.TAG, "Wake lock is already released, doing nothing");
+                }
             }
+            PlayAdsFromUsbActivity.hashSet.remove(transposeFile.getAbsolutePath());
+            Log.i(Prefs.TAG, "doInBackground finished");
             return Integer.valueOf(0);
         }
 
@@ -149,6 +161,7 @@ public class StartService extends Service {
             String rc = GeneralUtils.getReturnCodeFromLog(vkLogPath);
             final String status = rc;
             Log.i(Prefs.TAG, " onPostExecute  rc" + rc);
+            StartProcess();
 
 
         }

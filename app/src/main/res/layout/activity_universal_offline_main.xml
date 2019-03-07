@@ -26,25 +26,37 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/white"
-        android:src="@drawable/df_logo_m"
         android:visibility="invisible" />
 
-
-    <SurfaceView
-        android:id="@+id/surface_view"
+    <RelativeLayout
+        android:id="@+id/uv_video_rl"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_margin="10dp"
-        android:background="@android:color/white"
-        android:visibility="gone" />
+        android:background="@color/uvv_black"
+        android:visibility="gone">
 
-    <com.displayfort.dfortusb.widgets.FullScreenVideoView
-        android:id="@+id/videoView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerHorizontal="false"
-        android:layout_centerVertical="true"
-        android:layout_margin="0dp"
-        android:visibility="gone" />
+        <com.universalvideoview.UniversalVideoView
+            android:id="@+id/videoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            android:layout_centerHorizontal="false"
+            android:layout_centerVertical="true"
+            android:layout_margin="0dp"
+            android:visibility="visible"
+            app:uvv_autoRotation="true"
+            app:uvv_fitXY="false" />
+
+        <com.universalvideoview.UniversalMediaController
+            android:id="@+id/media_controller"
+            android:layout_width="fill_parent"
+            android:layout_height="40dp"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:rotation="0"
+            android:visibility="gone"
+            app:uvv_scalable="true" />
+    </RelativeLayout>
 
 </RelativeLayout>
