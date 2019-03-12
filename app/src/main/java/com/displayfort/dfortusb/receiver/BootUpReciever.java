@@ -15,7 +15,7 @@ public class BootUpReciever extends BroadcastReceiver {
 
     @Override
     public void onReceive(final Context context, Intent intent) {
-        Toast.makeText(context, "Boot Received", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(context, "Boot Received", Toast.LENGTH_SHORT).show();
         Intent i = new Intent(context, SplashActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(i);

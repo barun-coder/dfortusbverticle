@@ -65,7 +65,7 @@ public class PlayAdsFromUsbActivity extends BaseSupportActivity implements Surfa
         this.sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_NAME, Context.MODE_PRIVATE);
         Orientation = ExifInterface.ORIENTATION_UNDEFINED;
         init();
-        SHowMNT();
+//        SHowMNT();
     }
 
     private void init() {
@@ -76,6 +76,23 @@ public class PlayAdsFromUsbActivity extends BaseSupportActivity implements Surfa
         mDefaultIV = (ImageView) findViewById(R.id.default_iv);
         displayImageView = (ImageView) findViewById(R.id.imageView2);
         videoView = findViewById(R.id.videoView);
+        videoView.setVisibility(View.VISIBLE);
+        videoView.setVideoURI(Uri.parse("/storage/emulated/0/ads/nissan.mp4"));
+        videoView.start();
+        videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                Log.d("VIDEPATH", "onCompletion");
+            }
+        });
+
+        videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mp, int what, int extra) {
+                Log.d("VIDEPATH", "onError");
+                return false;
+            }
+        });
     }
 
     ///data/user/0/displayfort.nirmit.com.myapplication/files

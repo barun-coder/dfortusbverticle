@@ -8,18 +8,6 @@
     android:visibility="visible"
     tools:layout_editor_absoluteY="81dp">
 
-    <ImageView
-        android:id="@+id/default_iv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:layout_margin="50dp"
-        android:background="@android:color/white"
-        android:rotation="180"
-        android:scaleType="centerInside"
-        android:src="@drawable/df_logo_m" />
-
 
     <ImageView
         android:id="@+id/imageView2"
@@ -32,8 +20,9 @@
         android:id="@+id/uv_video_rl"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_margin="0dp"
         android:background="@color/uvv_black"
-        android:visibility="gone">
+        android:visibility="invisible">
 
         <com.universalvideoview.UniversalVideoView
             android:id="@+id/videoView"
@@ -58,5 +47,18 @@
             android:visibility="gone"
             app:uvv_scalable="true" />
     </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/default_iv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_margin="50dp"
+        android:background="@android:color/white"
+        android:rotation="180"
+        android:scaleType="centerInside"
+        android:src="@drawable/df_logo_m" />
+
 
 </RelativeLayout>

@@ -9,7 +9,15 @@ import android.os.Environment;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.daasuu.mp4compose.FillMode;
+import com.daasuu.mp4compose.Rotation;
+import com.daasuu.mp4compose.composer.Mp4Composer;
+import com.daasuu.mp4compose.filter.GlFilterGroup;
+import com.daasuu.mp4compose.filter.GlMonochromeFilter;
+import com.daasuu.mp4compose.filter.GlVignetteFilter;
+import com.displayfort.dfortusb.BaseSupportActivity;
 import com.displayfort.dfortusb.PlayAdsFromUsbActivity;
 import com.displayfort.dfortusb.R;
 import com.netcompss.ffmpeg4android.GeneralUtils;
@@ -19,6 +27,8 @@ import com.netcompss.loader.LoadJNI;
 
 import java.io.File;
 import java.net.URLConnection;
+
+import static android.support.constraint.Constraints.TAG;
 
 /**
  * Created by Husain on 14-03-2016.
@@ -63,11 +73,55 @@ public class StartService extends Service {
             completFileList = mainFile.listFiles();
             if (completFileList != null && completFileList.length > 0) {
                 new TranscdingBackground().execute();
+//                VideoConverProcessTask();
             }
+
         }
         return super.onStartCommand(intent, flags, startId);
     }
 
+//    public void VideoConverProcessTask() {
+//
+//        for (int i = 0; i < completFileList.length; i++) {
+//            File files = completFileList[i];
+//            File transposeFile = new File(demoVideoFolder + files.getName());
+//            new Mp4Composer(files.getAbsolutePath(), transposeFile.getAbsolutePath())
+//                    .rotation(Rotation.ROTATION_270)
+////                    .size(1080, 2220)
+//                    .fillMode(FillMode.PRESERVE_ASPECT_FIT)
+//                    .listener(new Mp4Composer.Listener() {
+//                        @Override
+//                        public void onProgress(double progress) {
+//                            Log.d(TAG, "onProgress = " + progress);
+//                            runOnUiThread(() -> progressBar.setProgress((int) (progress * 100)));
+//                        }
+//
+//                        @Override
+//                        public void onCompleted() {
+//                            Log.d(TAG, "onCompleted()");
+//                            exportMp4ToGallery(getApplicationContext(), videoPath);
+//                            runOnUiThread(() -> {
+//                                progressBar.setProgress(100);
+//                                findViewById(R.id.start_codec_button).setEnabled(true);
+//                                findViewById(R.id.start_play_movie).setEnabled(true);
+//                                Toast.makeText(MainActivity.this, "codec complete path =" + videoPath, Toast.LENGTH_SHORT).show();
+//                            });
+//                        }
+//
+//                        @Override
+//                        public void onCanceled() {
+//
+//                        }
+//
+//                        @Override
+//                        public void onFailed(Exception exception) {
+//                            Log.d(TAG, "onFailed()");
+//                        }
+//                    })
+//                    .start();
+//        }
+//
+//    }
 
     public class TranscdingBackground extends AsyncTask<String, Integer, Integer> {
         File files;
@@ -91,9 +145,10 @@ public class StartService extends Service {
                         PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "USB:VK_LOCK");
                         Log.d(Prefs.TAG, "Acquire wake lock");
                         wakeLock.acquire();
-                        PlayAdsFromUsbActivity.hashSet.add(transposeFile.getAbsolutePath());
+                        BaseSupportActivity.hashSet.add(transposeFile.getAbsolutePath());
                         Log.i(Prefs.TAG, files.getAbsolutePath() + "\n" + transposeFile.getAbsolutePath());
-                        String commandStr8 = "ffmpeg -y -i " + files.getAbsolutePath().replace(" ", "%20") + " -strict experimental -vf transpose=2 -aspect 16:9 " + transposeFile.getAbsolutePath().replace(" ", "%20"); //-s frame rate
+//                        String commandStr8 = "ffmpeg -y -i " + files.getAbsolutePath().replace(" ", "%20") + " -strict experimental -vf transpose=2 -aspect 16:9 " + transposeFile.getAbsolutePath().replace(" ", "%20"); //-s frame rate
+                        String commandStr8 = "ffmpeg -y -i " + files.getAbsolutePath().replace(" ", "%20") + " exiftool -rotation=90 " + transposeFile.getAbsolutePath().replace(" ", "%20"); //-s frame rate
                         LoadJNI vk = new LoadJNI();
                         try {
                             /*  /data/user/0/com.displayfort.dfortusb/blue_ball_v.mp4*/
@@ -118,7 +173,7 @@ public class StartService extends Service {
                                 Log.i(Prefs.TAG, "Wake lock is already released, doing nothing");
                             }
                         }
-                        PlayAdsFromUsbActivity.hashSet.remove(transposeFile.getAbsolutePath());
+                        BaseSupportActivity.hashSet.remove(transposeFile.getAbsolutePath());
                         Log.i(Prefs.TAG, "doInBackground finished");
                     } else {
                         Log.i(Prefs.TAG, "File Exist " + transposeFile.getName());

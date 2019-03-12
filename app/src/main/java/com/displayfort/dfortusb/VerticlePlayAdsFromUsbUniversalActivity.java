@@ -1,11 +1,13 @@
 package com.displayfort.dfortusb;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -16,8 +18,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.provider.MediaStore;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
@@ -28,18 +31,14 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.daasuu.mp4compose.FillMode;
-import com.daasuu.mp4compose.Rotation;
-import com.daasuu.mp4compose.composer.Mp4Composer;
 import com.displayfort.dfortusb.receiver.StartService;
-import com.displayfort.dfortusb.widgets.FullScreenVideoView;
-import com.displayfort.dfortusb.widgets.UniversalFullScreenVideoView;
 import com.netcompss.ffmpeg4android.Prefs;
 import com.universalvideoview.UniversalMediaController;
 import com.universalvideoview.UniversalVideoView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.URLConnection;
 
 
@@ -47,9 +46,8 @@ import java.net.URLConnection;
  * Created by pc on 09/01/2019 10:59.
  * MyApplication
  */
-public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity implements SurfaceHolder.Callback {
+public class VerticlePlayAdsFromUsbUniversalActivity extends BaseSupportActivity implements SurfaceHolder.Callback {
     private String TAG = "USBCatch";
-    private String TAGs = "FileTranspose";
 
     String macId;
     private ImageView mDefaultIV;
@@ -65,7 +63,7 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
     private UniversalVideoView videoView;
     private RelativeLayout mUvVideoRl;
     private File filePath;
-    private int height, width;
+    private MyReceiver myReceiver;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -73,13 +71,27 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
         setContentView(R.layout.activity_universal_offline_main);
         this.sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_NAME, Context.MODE_PRIVATE);
         Orientation = ExifInterface.ORIENTATION_UNDEFINED;
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-        height = displayMetrics.heightPixels;
-        width = displayMetrics.widthPixels;
+        RegisterUpdateReceiver();
+//        check();
         init();
         SHowMNT();
 
+    }
+
+    private void check() {
+        try {
+            File f = Environment.getExternalStorageDirectory();
+            File[] files = f.listFiles();
+            String fol = "";
+            for (File inFile : files) {
+                Toast.makeText(VerticlePlayAdsFromUsbUniversalActivity.this, "" + inFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+                if (inFile.isDirectory()) {
+                    fol += inFile.toString() + "\n";
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void init() {
@@ -94,6 +106,9 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
 
     ///data/user/0/displayfort.nirmit.com.myapplication/files
     private void SHowMNT() {
+        mDefaultIV.setVisibility(View.VISIBLE);
+        mUvVideoRl.setVisibility(View.INVISIBLE);
+        displayImageView.setVisibility(View.INVISIBLE);
         showLog("FILEPATH", "\n\n");
         File[] fileList;
         File file = new File("mnt");
@@ -105,7 +120,7 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
             }
             showLog("FILEPATH", "MNT over \n");
             File file1 = new File(getApplicationContext().getFilesDir().getPath());
-            if (!isNotMobile()) {
+            if (!isNotMobile() && isIMEIAvailable()) {
                 if (Orientation == ExifInterface.ORIENTATION_UNDEFINED) {
                     file1 = new File(Environment.getExternalStorageDirectory() + File.separator + "ads");
                 } else {
@@ -139,6 +154,16 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
                                 }
                             }
                         }
+                    } else {
+                        file1 = new File(file.getAbsoluteFile() + File.separator + "sdcard");
+                        fileList = file1.listFiles();
+                        if (fileList != null && fileList.length > 0) {
+//                            for (int i = 0; i < fileList.length; i++) {
+                            startFIlePlay(file1);
+                            return;
+                            //                            }
+
+                        }
                     }
                 }
             }
@@ -152,87 +177,17 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
         filterName(file);
         completFileList = file.listFiles();
         if (completFileList != null && completFileList.length > 0) {
-            startServiceVideoProcess();
+            mDefaultIV.setVisibility(View.GONE);
 //            Intent intent = new Intent(this, StartService.class);
 //            intent.putExtra("FILEPATH", file.getAbsolutePath());
 //            startService(intent);
             showLog("FILEPATH", completFileList.length + " completFileList \n");
             currentAdvertisementNo = 0;
             showCurrentAdvertisements();
+        } else {
+            mUvVideoRl.setVisibility(View.INVISIBLE);
+            displayImageView.setVisibility(View.INVISIBLE);
         }
-    }
-
-    private void startServiceVideoProcess() {
-        String demoVideoFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + Prefs.FOLDER;
-        String demoVideoPath = demoVideoFolder + "in.mp4";
-        if (completFileList != null && completFileList.length > 0) {
-            for (int i = 0; i < completFileList.length; i++) {
-                File files = completFileList[i];
-                if (files.getAbsolutePath().contains("Thor")) {
-                    showLog(TAGs, "Process File Contain  : " + files);
-                }
-                String type = URLConnection.guessContentTypeFromName(files.getName());
-                final File transposeFile = new File(demoVideoFolder + "_" + files.getName());
-                showLog(TAGs, "Initial Process File : " + files.getAbsolutePath() + ": " + type);
-                if (type != null && type.toLowerCase().contains("video") && !transposeFile.exists() && getFileExtension(files).equalsIgnoreCase("mp4")) {
-                    showLog(TAGs, "Process File : " + files.getAbsolutePath());
-                    new Mp4Composer(files.getAbsolutePath(), transposeFile.getAbsolutePath())
-                            .rotation(Rotation.ROTATION_270)
-                            .size(width, height)
-                            //                            .fillMode(FillMode.PRESERVE_ASPECT_FIT)
-                            .listener(new Mp4Composer.Listener() {
-                                @Override
-                                public void onProgress(double progress) {
-                                    Log.d(TAGs, "onProgress = " + progress);
-                                }
-
-                                @Override
-                                public void onCompleted() {
-                                    Log.d(TAGs, "onCompleted()");
-                                    exportMp4ToGallery(getApplicationContext(), transposeFile.getAbsolutePath());
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Toast.makeText(PlayAdsFromUsbUniversalActivity.this, "codec complete path =" + transposeFile, Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
-
-                                }
-
-                                @Override
-                                public void onCanceled() {
-
-                                }
-
-                                @Override
-                                public void onFailed(Exception exception) {
-                                    Log.d(TAGs, "onFailed()");
-                                }
-                            })
-                            .start();
-                }
-            }
-        }
-    }
-
-    private String getFileExtension(File file) {
-        String fileName = file.getName();
-        if (fileName.lastIndexOf(".") != -1 && fileName.lastIndexOf(".") != 0) {
-            showLog(TAGs, "Extensions : " + fileName.substring(fileName.lastIndexOf(".") + 1));
-            return fileName.substring(fileName.lastIndexOf(".") + 1);
-        } else return "";
-    }
-
-    public static void exportMp4ToGallery(Context context, String filePath) {
-        // ビデオのメタデータを作成する
-        final ContentValues values = new ContentValues(2);
-        values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
-        values.put(MediaStore.Video.Media.DATA, filePath);
-        // MediaStoreに登録
-        context.getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                values);
-        context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-                Uri.parse("file://" + filePath)));
     }
 
     private void filterName(File file) {
@@ -261,56 +216,49 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
         try {
             setTheme(R.style.AppTheme);
             final File file = completFileList[currentAdvertisementNo];
-            showLog("FILEPATH", "Run File " + file.getAbsolutePath() + "\n");
-            String type = URLConnection.guessContentTypeFromName(file.getName());
-            if (type != null) {
-                if (type.toLowerCase().contains("gif")) {
-                    mUvVideoRl.setVisibility(View.INVISIBLE);
-                    displayImageView.setVisibility(View.VISIBLE);
-                    String photoPath = file.getAbsolutePath();
-                    Glide.with(this).load(changeOrientation(photoPath)).into(displayImageView);
-                    Log.d("ADVERTISEMENT", photoPath.toString() + "");
-                    interval = 5000;
-                } else if (type.toLowerCase().contains("image")) {
-                    mUvVideoRl.setVisibility(View.INVISIBLE);
-                    displayImageView.setVisibility(View.VISIBLE);
-                    //displayImageView
-                    String photoPath = file.getAbsolutePath();
-                    BitmapFactory.Options options = new BitmapFactory.Options();
-                    options.inSampleSize = 8;
-                    final Bitmap b = changeOrientation(photoPath);// BitmapFactory.decodeFile(photoPath, options);
-                    displayImageView.setImageBitmap(b);
-                    Log.d("ADVERTISEMENT", photoPath.toString() + "");
-                    interval = 5000;
-                } else if (type.toLowerCase().contains("video")) {
-                    displayImageView.setVisibility(View.VISIBLE);
-                    mUvVideoRl.setVisibility(View.INVISIBLE);
-                    File newfile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + Prefs.FOLDER + file.getName());// new File(getApplicationInfo().dataDir + File.separator + file.getName());
-                    boolean isFileFound = newfile.exists();
-                    if (!isFileFound) {
-                        Log.d(" VIDEPATH", "isFileFound" + isFileFound);
-                        interval = -1; // 1 Second
-                    } else {
-                        Log.d("VIDEPATH", "isFileFound" + isFileFound);
-                        if (!hashSet.contains(newfile.getAbsolutePath())) {
+            if (file.exists()) {
+                showLog("FILEPATH", "Run File " + file.getAbsolutePath() + "\n");
+                String type = URLConnection.guessContentTypeFromName(file.getName());
+                if (type != null) {
+                    if (type.toLowerCase().contains("gif")) {
+                        mUvVideoRl.setVisibility(View.INVISIBLE);
+                        displayImageView.setVisibility(View.VISIBLE);
+                        String photoPath = file.getAbsolutePath();
+                        Glide.with(this).load(photoPath).into(displayImageView);
+                        Log.d("ADVERTISEMENT", photoPath.toString() + "");
+                        displayImageView.setRotation(270f);
+                        interval = 5000;
+                    } else if (type.toLowerCase().contains("image")) {
+                        mUvVideoRl.setVisibility(View.INVISIBLE);
+                        displayImageView.setVisibility(View.VISIBLE);
+                        displayImageView.setRotation(0f);
+                        //displayImageView
+                        String photoPath = file.getAbsolutePath();
+                        BitmapFactory.Options options = new BitmapFactory.Options();
+                        options.inSampleSize = 8;
+                        final Bitmap b = changeOrientation(photoPath);// BitmapFactory.decodeFile(photoPath, options);
+                        displayImageView.setImageBitmap(b);
+                        System.gc();
+                        Log.d("ADVERTISEMENT", photoPath.toString() + "");
+                        interval = 5000;
+                    } else if (type.toLowerCase().contains("video")) {
+                        displayImageView.setVisibility(View.INVISIBLE);
+                        mUvVideoRl.setVisibility(View.VISIBLE);
+                        File newfile = file;// new File(Environment.getExternalStorageDirectory().getAbsolutePath() + Prefs.FOLDER + file.getName());// new File(getApplicationInfo().dataDir + File.separator + file.getName());
+                        boolean isFileFound = newfile.exists();
+                        if (!isFileFound) {
+                            Log.d(" VIDEPATH", "isFileFound" + isFileFound);
+                            interval = -1; // 1 Second
+                        } else {
+                            Log.d("VIDEPATH", "isFileFound" + isFileFound);
                             Log.d("VIDEPATH", "PlayAdsFromUsbActivity.hashSet" + true);
-                            mUvVideoRl.setVisibility(View.VISIBLE);
                             String photoPath = newfile.getAbsolutePath();
                             interval = getMiliseconds(newfile);
                             if (interval != 0) {
                                 Log.i("PostActivity", "Video List is " + getFilesDir().getPath());
                                 Uri myUri = Uri.parse(photoPath); // initialize Uri here
-
-
                                 String url = photoPath;
                                 try {
-//                                    if (mMediaPlayer == null) {
-//                                        mMediaPlayer = new MediaPlayer();
-//                                        mMediaPlayer.setDisplay(mSurfaceView.getHolder());
-//                                    } else {
-//                                        mMediaPlayer.release();
-//
-//                                    }
                                     videoView.setVideoURI(Uri.parse(photoPath));
                                     videoView.start();
                                     videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
@@ -319,11 +267,17 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
                                             Log.d("VIDEPATH", "onCompletion");
                                         }
                                     });
-
                                     videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
                                         @Override
                                         public boolean onError(MediaPlayer mp, int what, int extra) {
                                             Log.d("VIDEPATH", "onError");
+                                            videoView.stopPlayback();
+                                            if (currentAdvertisementNo < (completFileList.length - 1)) {
+                                                currentAdvertisementNo++;
+                                            } else {
+                                                currentAdvertisementNo = 0;
+                                            }
+                                            showCurrentAd();
                                             return false;
                                         }
                                     });
@@ -334,53 +288,44 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
                             } else {
                                 interval = -1;
                             }
-                        } else {
-                            Log.d("VIDEPATH", "PlayAdsFromUsbActivity.hashSet" + false);
-                            interval = -1;
+
                         }
+                        // 1 Second
                     }
-                    // 1 Second
                 }
-            }
-            if (interval != 0) {
-                Log.d("interval", "interval  :  " + interval + " " + file.getName());
-                Handler handler = new Handler();
-                // final MainActivity MyActivity=this;
-                Runnable runnable = new Runnable() {
-                    public void run() {
-                        /* hit api on stop*/
-                        showCurrentAd();
+
+                if (interval != 0) {
+                    Log.d("interval", "interval  :  " + interval + " " + file.getName());
+                    Handler handler = new Handler();
+                    // final MainActivity MyActivity=this;
+                    Runnable runnable = new Runnable() {
+                        public void run() {
+                            /* hit api on stop*/
+                            showCurrentAd();
+                        }
+                    };
+                    handler.postDelayed(runnable, interval);
+                    if (currentAdvertisementNo < (completFileList.length - 1)) {
+                        currentAdvertisementNo++;
+                    } else {
+                        currentAdvertisementNo = 0;
                     }
-                };
-                handler.postDelayed(runnable, interval);
-                if (currentAdvertisementNo < (completFileList.length - 1)) {
-                    currentAdvertisementNo++;
-                } else {
-                    currentAdvertisementNo = 0;
                 }
-            }
-        } catch (Exception e) {
-            if (filePath != null && filePath.exists()) {
-                Log.e("Handeledexception", "E: " + e.getMessage());
-                mUvVideoRl.setVisibility(View.INVISIBLE);
-                displayImageView.setVisibility(View.VISIBLE);
-                Handler handler = new Handler();
-                if (currentAdvertisementNo < (completFileList.length - 1)) {
-                    currentAdvertisementNo++;
-                } else {
-                    currentAdvertisementNo = 0;
-                }
-                Runnable runnable = new Runnable() {
-                    public void run() {
-                        /* hit api on stop*/
-                        showCurrentAd();
-                    }
-                };
-                handler.post(runnable);
             } else {
-                mUvVideoRl.setVisibility(View.INVISIBLE);
-                displayImageView.setVisibility(View.VISIBLE);
+                SHowMNT();
             }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("Handeledexception", "E: " + e.getMessage());
+            mUvVideoRl.setVisibility(View.INVISIBLE);
+            displayImageView.setVisibility(View.VISIBLE);
+            if (currentAdvertisementNo < (completFileList.length - 1)) {
+                currentAdvertisementNo++;
+            } else {
+                currentAdvertisementNo = 0;
+            }
+            showCurrentAd();
         }
     }
 
@@ -442,8 +387,14 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
 //use one of overloaded setDataSource() functions to set your data source
         retriever.setDataSource(this, Uri.fromFile(file));
         String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-        long timeInMillisec = Long.parseLong(time);
-        return (int) timeInMillisec;
+        long timeInMillisec = 0;
+        try {
+            timeInMillisec = Long.parseLong(time);
+            return (int) timeInMillisec;
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
+        return 1;
     }
 
     private boolean isNotMobile() {
@@ -455,6 +406,23 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
         float heightInches = metrics.heightPixels / metrics.ydpi;
         double diagonalInches = Math.sqrt(Math.pow(widthInches, 2) + Math.pow(heightInches, 2));
         return diagonalInches >= 7.0;
+    }
+    private boolean isIMEIAvailable() {
+        TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return true;
+        }
+        if (telephonyManager.getDeviceId() != null) {
+            return true;
+        }
+        return false;
     }
 
     private void showLog(String tag, String deviceName) {
@@ -481,6 +449,11 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
     }
 
     private void onFinishAPP() {
+        try {
+            unregisterReceiver(myReceiver);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         try {
             if (videoView != null && videoView.isPlaying()) {
                 videoView.stopPlayback();
@@ -515,18 +488,6 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
         mMediaPlayer = new MediaPlayer();
         mSurfaceHolder = holder;
         mMediaPlayer.setDisplay(holder);
-//        try {
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//                mMediaPlayer.setDataSource("/sdcard/videokit/out1.mp4");
-//            } else {
-//            }
-//            mMediaPlayer.setLooping(true);
-//            mMediaPlayer.prepare();
-//            mMediaPlayer.setOnPreparedListener(this);
-//            mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
     }
 
     @Override
@@ -548,7 +509,14 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
                 SHowMNT();
             }
         }
+
     }
 
-
+    private void RegisterUpdateReceiver() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("android.intent.action.MEDIA_MOUNTED");
+        intentFilter.addDataScheme("file");
+        myReceiver = new MyReceiver();
+        this.registerReceiver(myReceiver, intentFilter);
+    }
 }
