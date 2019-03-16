@@ -68,6 +68,11 @@ public class VerticlePlayAdsFromUsbUniversalActivity extends BaseSupportActivity
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        View decorView = getWindow().getDecorView();
+        int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN;
+        decorView.setSystemUiVisibility(uiOptions);
+
         setContentView(R.layout.activity_universal_offline_main);
         this.sharedPreferences = getSharedPreferences(SHARED_PREFERENCE_NAME, Context.MODE_PRIVATE);
         Orientation = ExifInterface.ORIENTATION_UNDEFINED;
@@ -226,7 +231,7 @@ public class VerticlePlayAdsFromUsbUniversalActivity extends BaseSupportActivity
                         String photoPath = file.getAbsolutePath();
                         Glide.with(this).load(photoPath).into(displayImageView);
                         Log.d("ADVERTISEMENT", photoPath.toString() + "");
-                        displayImageView.setRotation(270f);
+//                        displayImageView.setRotation(270f);
                         interval = 5000;
                     } else if (type.toLowerCase().contains("image")) {
                         mUvVideoRl.setVisibility(View.INVISIBLE);
@@ -234,10 +239,11 @@ public class VerticlePlayAdsFromUsbUniversalActivity extends BaseSupportActivity
                         displayImageView.setRotation(0f);
                         //displayImageView
                         String photoPath = file.getAbsolutePath();
-                        BitmapFactory.Options options = new BitmapFactory.Options();
-                        options.inSampleSize = 8;
-                        final Bitmap b = changeOrientation(photoPath);// BitmapFactory.decodeFile(photoPath, options);
-                        displayImageView.setImageBitmap(b);
+                        Glide.with(this).load(photoPath).into(displayImageView);
+//                        BitmapFactory.Options options = new BitmapFactory.Options();
+//                        options.inSampleSize = 8;
+//                        final Bitmap b = changeOrientation(photoPath);// BitmapFactory.decodeFile(photoPath, options);
+//                        displayImageView.setImageBitmap(b);
                         System.gc();
                         Log.d("ADVERTISEMENT", photoPath.toString() + "");
                         interval = 5000;
@@ -407,6 +413,7 @@ public class VerticlePlayAdsFromUsbUniversalActivity extends BaseSupportActivity
         double diagonalInches = Math.sqrt(Math.pow(widthInches, 2) + Math.pow(heightInches, 2));
         return diagonalInches >= 7.0;
     }
+
     private boolean isIMEIAvailable() {
         TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {

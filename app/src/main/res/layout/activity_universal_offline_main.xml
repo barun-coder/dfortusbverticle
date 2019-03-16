@@ -56,9 +56,9 @@
         android:layout_centerVertical="true"
         android:layout_margin="50dp"
         android:background="@android:color/white"
-        android:rotation="180"
+        android:rotation="0"
         android:scaleType="centerInside"
-        android:src="@drawable/df_logo_m" />
+        android:src="@drawable/dflogo" />
 
 
 </RelativeLayout>

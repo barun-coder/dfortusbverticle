@@ -47,7 +47,7 @@
         <activity
             android:name=".VerticlePlayAdsFromUsbUniversalActivity"
             android:configChanges="orientation|screenSize"
-            android:screenOrientation="landscape" />
+            android:screenOrientation="portrait" />
 
 
         <receiver
