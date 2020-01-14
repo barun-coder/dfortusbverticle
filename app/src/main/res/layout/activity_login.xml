@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:padding="40dp">
+
+    <ImageView
+        android:id="@+id/default_iv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="40dp"
+        android:background="@android:color/white"
+        android:scaleType="centerInside"
+        android:src="@mipmap/tiny_logo" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/default_iv"
+        android:layout_centerInParent="true"
+        android:labelFor="@+id/city"
+        android:orientation="vertical">
+
+
+        <TextView
+            android:id="@+id/security_pin_tv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/uniquid_tv"
+            android:layout_centerHorizontal="true"
+            android:gravity="center"
+            android:maxLines="1"
+            android:padding="12dp"
+            android:singleLine="true"
+            android:text="Enter 8 Digit Security Pin"
+            android:textColor="@color/colorPrimary"
+            android:textSize="16sp" />
+
+
+        <EditText
+            android:id="@+id/security_pin_et"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:layout_below="@+id/security_pin_tv"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+                    android:gravity="center"
+            android:hint="8 Digit Pin"
+            android:imeActionId="6"
+            android:imeActionLabel="@string/action_sign_in_short"
+            android:imeOptions="actionUnspecified"
+            android:inputType="textPassword|textCapCharacters"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:text=""
+            android:textAllCaps="true"
+            android:textSize="18sp" />
+
+
+        <RelativeLayout
+            android:id="@+id/rl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/codeinput"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="16dp"
+            android:background="?selectableItemBackgroundBorderless">
+
+            <Button
+                android:id="@+id/email_sign_in_button"
+                style="?android:textAppearanceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                    android:text="@string/action_sign_in"
+                android:textColor="@color/white"
+                android:textStyle="bold" />
+
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/uniquid_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:hint="if you don’t have or forgot security pin please contact to displayfort lite authority."
+            android:textColor="@color/colorPrimary"
+            android:textSize="18sp" />
+
+    </LinearLayout>
+
+</RelativeLayout>

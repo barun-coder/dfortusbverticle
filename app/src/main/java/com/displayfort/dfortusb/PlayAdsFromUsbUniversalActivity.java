@@ -152,10 +152,10 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
         filterName(file);
         completFileList = file.listFiles();
         if (completFileList != null && completFileList.length > 0) {
-            startServiceVideoProcess();
-//            Intent intent = new Intent(this, StartService.class);
-//            intent.putExtra("FILEPATH", file.getAbsolutePath());
-//            startService(intent);
+//            startServiceVideoProcess();
+            Intent intent = new Intent(this, StartService.class);
+            intent.putExtra("FILEPATH", file.getAbsolutePath());
+            startService(intent);
             showLog("FILEPATH", completFileList.length + " completFileList \n");
             currentAdvertisementNo = 0;
             showCurrentAdvertisements();
@@ -285,7 +285,7 @@ public class PlayAdsFromUsbUniversalActivity extends BaseSupportActivity impleme
                 } else if (type.toLowerCase().contains("video")) {
                     displayImageView.setVisibility(View.VISIBLE);
                     mUvVideoRl.setVisibility(View.INVISIBLE);
-                    File newfile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + Prefs.FOLDER + file.getName());// new File(getApplicationInfo().dataDir + File.separator + file.getName());
+                    File newfile = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + Prefs.FOLDER +"_"+file.getName());// new File(getApplicationInfo().dataDir + File.separator + file.getName());
                     boolean isFileFound = newfile.exists();
                     if (!isFileFound) {
                         Log.d(" VIDEPATH", "isFileFound" + isFileFound);

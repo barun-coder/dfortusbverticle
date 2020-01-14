@@ -40,7 +40,7 @@ public class StartService extends Service {
     private String vkLogPath = null;
     private Context context;
     private File[] completFileList;
-
+    public static final String FOLDER = "/USB/";
     @Override
     public IBinder onBind(Intent intent) {
         // TODO Auto-generated method stub
@@ -51,7 +51,7 @@ public class StartService extends Service {
     public void onCreate() {
         super.onCreate();
         this.context = this;
-        demoVideoFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + Prefs.FOLDER;
+        demoVideoFolder = Environment.getExternalStorageDirectory().getAbsolutePath() + FOLDER;
         demoVideoPath = demoVideoFolder + "in.mp4";
 
         Log.i(Prefs.TAG, getString(R.string.app_name) + " version: " + GeneralUtils.getVersionName(getApplicationContext()));

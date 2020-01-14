@@ -39,9 +39,9 @@ public class SplashActivity extends AppCompatActivity {
             @Override
             public void run() {
                 Intent intent;
-                intent = new Intent(context, VerticlePlayAdsFromUsbUniversalActivity.class);
-//                intent = new Intent(context, PlayAdsFromUsbUniversalActivity.class);
-//                intent = new Intent(context, PlayAdsFromUsbActivity.class);
+//                intent = new Intent(context, PotraitPlayAdsFromUsbUniversalActivity.class);
+                intent = new Intent(context, PlayAdsFromUsbUniversalActivity.class);
+//                intent = new Intent(context, LoginActivity.class);
                 startActivity(intent);
                 finish();
 
